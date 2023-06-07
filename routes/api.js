@@ -16,11 +16,21 @@ module.exports = function (app) {
       const createThreadController = makeCreateThreadControllerFactory();
       const response = await createThreadController.execute(req);
 
+      if (response === "success") {
+        res.send(response);
+        return;
+      }
+
       res.json(response);
     })
     .get(async (req, res) => {
       const getThreadController = makeGetThreadControllerFactory();
       const response = await getThreadController.execute(req);
+
+      if (response === "success") {
+        res.send(response);
+        return;
+      }
 
       res.json(response);
     })
@@ -28,11 +38,21 @@ module.exports = function (app) {
       const updateThreadController = makeUpdateThreadControllerFactory();
       const response = await updateThreadController.execute(req);
 
+      if (response === "success") {
+        res.send(response);
+        return;
+      }
+
       res.json(response);
     })
     .delete(async (req, res) => {
       const deleteThreadController = makeDeleteThreadControllerFactory();
       const response = await deleteThreadController.execute(req);
+
+      if (response === "success") {
+        res.send(response);
+        return;
+      }
 
       res.json(response);
     });
@@ -43,11 +63,21 @@ module.exports = function (app) {
       const createReplyController = makeCreateReplyControllerFactory();
       const response = await createReplyController.execute(req);
 
+      if (response === "success") {
+        res.send(response);
+        return;
+      }
+
       res.json(response);
     })
     .get(async (req, res) => {
       const getReplyController = makeGetReplyControllerFactory();
       const response = await getReplyController.execute(req);
+
+      if (response === "success") {
+        res.send(response);
+        return;
+      }
 
       res.json(response);
     })
@@ -55,11 +85,21 @@ module.exports = function (app) {
       const updateReplyController = makeUpdateReplyControllerFactory();
       const response = await updateReplyController.execute(req);
 
+      if (response === "success") {
+        res.send(response);
+        return;
+      }
+
       res.json(response);
     })
     .delete(async (req, res) => {
       const deleteReplyController = makeDeleteReplyControllerFactory();
       const response = await deleteReplyController.execute(req);
+
+      if (response === "success") {
+        res.send(response);
+        return;
+      }
 
       res.json(response);
     });
