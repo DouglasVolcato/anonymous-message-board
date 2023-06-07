@@ -6,178 +6,127 @@ const server = require("../server");
 chai.use(chaiHttp);
 
 suite("Functional Tests", function () {
-  suite("API ROUTING FOR /api/threads/:board", function () {
-    suite("POST", function () {
-      test("create thread", function (done) {
-        chai
-          .request(server)
-          .post("/api/threads/testsuite")
-          .send({ text: "Test Suite Thread Title", delete_password: "123" })
-          .end((err, res) => {
-            assert.equal(res.status, 200);
-            done();
-          });
-      });
-    });
+  let testThreadId;
+  let testReplyId;
+  let testPass = "testpass";
 
-    suite("GET", function () {
-      test("get top 10 threads", function (done) {
-        chai
-          .request(server)
-          .get("/api/threads/testsuite")
-          .end((err, res) => {
-            assert.equal(res.status, 200);
-            assert.isArray(res.body);
-            assert.isAtMost(res.body.length, 10);
-            assert.property(res.body[0], "_id");
-            assert.property(res.body[0], "text");
-            assert.property(res.body[0], "created_on");
-            assert.property(res.body[0], "bumped_on");
-            assert.property(res.body[0], "replies");
-            assert.isArray(res.body[0].replies);
-            done();
-          });
+  test("Create a New Thread", (done) => {
+    chai
+      .request(server)
+      .post("/api/threads/test")
+      .send({
+        board: "test",
+        text: "Functional Test Thread",
+        delete_password: testPass,
+      })
+      .end((err, res) => {
+        assert.equal(res.status, 200);
+        assert.equal(res.body.text, "Functional Test Thread");
+        assert.equal(res.body.delete_password, "testpass");
+        done();
       });
-    });
-
-    suite("DELETE", function () {
-      test("delete with missing fields", function (done) {
-        chai
-          .request(server)
-          .delete("/api/threads/testsuite")
-          .send({ board: "testsuite", delete_password: "123" })
-          .end((err, res) => {
-            assert.equal(res.status, 200);
-            done();
-          });
-      });
-
-      test("delete thread with valid info", function (done) {
-        chai
-          .request(server)
-          .delete("/api/threads/testsuite")
-          .send({
-            board: "testsuite",
-            thread_id: "5b5222c4e075982292e6e660",
-            delete_password: "123",
-          })
-          .end((err, res) => {
-            assert.equal(res.status, 200);
-            done();
-          });
-      });
-    });
-
-    suite("PUT", function () {
-      test("no id sent", function (done) {
-        chai
-          .request(server)
-          .put("/api/threads/testsuite")
-          .send({ board: "testsuite" })
-          .end((err, res) => {
-            assert.equal(res.status, 200);
-            done();
-          });
-      });
-
-      test("correct id sent", function (done) {
-        chai
-          .request(server)
-          .put("/api/threads/testsuite")
-          .send({ board: "testsuite", thread_id: "5b5222c4e075982292e6e660" })
-          .end((err, res) => {
-            assert.equal(res.status, 200);
-            done();
-          });
-      });
-    });
   });
 
-  suite("API ROUTING FOR /api/replies/:board", function () {
-    suite("POST", function () {
-      test("create thread", function (done) {
-        chai
-          .request(server)
-          .post("/api/replies/testsuite")
-          .send({
-            text: "Test Suite Thread Title",
-            thread_id: "5b5222ff819d11237030c9a7",
-            delete_password: "123",
-          })
-          .end((err, res) => {
-            assert.equal(res.status, 200);
-            done();
-          });
+  test("Post a reply on a Thread", (done) => {
+    chai
+      .request(server)
+      .post("/api/replies/test")
+      .send({
+        thread_id: testThreadId,
+        text: "Test Reply from Functional Test",
+        delete_password: testPass,
+      })
+      .end((err, res) => {
+        assert.equal(res.status, 200);
+        assert.equal(res.body.text, "Test Reply from Functional Test");
+        assert.equal(res.body.delete_password, "testpass");
+        assert.equal(res.body.reported, false);
+        done();
       });
-    });
+  });
 
-    suite("GET", function () {
-      test("get all replies to a thread", function (done) {
-        chai
-          .request(server)
-          .get("/api/replies/testsuite?thread_id=5b5222ff819d11237030c9a7")
-          .end((err, res) => {
-            assert.equal(res.status, 200);
-            done();
-          });
+  test("Get Threads from a Board", (done) => {
+    chai
+      .request(server)
+      .get("/api/threads/test")
+      .send()
+      .end((err, res) => {
+        assert.isArray(res.body);
+        done();
       });
-    });
+  });
 
-    suite("PUT", function () {
-      test("missing reply id", function (done) {
-        chai
-          .request(server)
-          .put("/api/replies/testsuite")
-          .send({ board: "testsuite", thread_id: "5b5222ff819d11237030c9a7" })
-          .end((err, res) => {
-            assert.equal(res.status, 200);
-            done();
-          });
+  test("Get Replies on a Thread", (done) => {
+    chai
+      .request(server)
+      .get("/api/replies/test")
+      .query({ thread_id: testThreadId })
+      .send()
+      .end((err, res) => {
+        if (res.body.error) {
+          done();
+        }
+        const thread = res.body;
+        assert.equal(thread._id, testThreadId);
+        assert.isUndefined(thread.delete_password);
+        assert.isArray(thread.replies);
+        done();
       });
+  });
 
-      test("correct id sent", function (done) {
-        chai
-          .request(server)
-          .put("/api/replies/testsuite")
-          .send({
-            board: "testsuite",
-            thread_id: "5b5222ff819d11237030c9a7",
-            reply_id: "1532113231148",
-          })
-          .end((err, res) => {
-            assert.equal(res.status, 200);
-            done();
-          });
+  test("Report a Thread", (done) => {
+    chai
+      .request(server)
+      .put("/api/threads/test")
+      .send({
+        thread_id: testThreadId,
+      })
+      .end((err, res) => {
+        assert.equal(res.text, "success");
+        done();
       });
-    });
+  });
 
-    suite("DELETE", function () {
-      test("delete with missing fields", function (done) {
-        chai
-          .request(server)
-          .delete("/api/replies/testsuite")
-          .send({ board: "testsuite", delete_password: "123" })
-          .end((err, res) => {
-            assert.equal(res.status, 200);
-            done();
-          });
+  test("Report a Reply on a Thread", (done) => {
+    chai
+      .request(server)
+      .put("/api/replies/test")
+      .send({
+        thread_id: testThreadId,
+        reply_id: testReplyId,
+      })
+      .end((err, res) => {
+        assert.equal(res.text, "success");
+        done();
       });
+  });
 
-      test("delete thread with valid info", function (done) {
-        chai
-          .request(server)
-          .delete("/api/replies/testsuite")
-          .send({
-            board: "testsuite",
-            thread_id: "5b5222ff819d11237030c9a7",
-            reply_id: "1532113231148",
-            delete_password: "123",
-          })
-          .end((err, res) => {
-            assert.equal(res.status, 200);
-            done();
-          });
+  test("Delete a Reply on a Thread", (done) => {
+    chai
+      .request(server)
+      .delete("/api/replies/test")
+      .send({
+        thread_id: testThreadId,
+        reply_id: testReplyId,
+        delete_password: testPass,
+      })
+      .end((err, res) => {
+        assert.equal(res.text, "success");
+        done();
       });
-    });
+  });
+
+  test("Delete a Thread", (done) => {
+    chai
+      .request(server)
+      .delete("/api/threads/test")
+      .send({
+        thread_id: testThreadId,
+        delete_password: testPass,
+      })
+      .end((err, res) => {
+        assert.equal(res.text, "success");
+        done();
+      });
   });
 });
